@@ -55,7 +55,7 @@ def animate_simple_pendulum(sol):
         
         return path1, trail1, bob1, rod1,
 
-    ani = animation.FuncAnimation(fig, animate, frames=len(sol)-2, interval=2, blit=True)
+    ani = animation.FuncAnimation(fig, animate, frames=len(sol)-2, interval=20, blit=True)
     plt.close(fig)
     return ani
 
@@ -98,6 +98,6 @@ def animate_double_pendulum(sol):
         
         return path1, trail1, bob1, rod1, path2, trail2, bob2, rod2,
 
-    ani = animation.FuncAnimation(fig, animate, frames=len(sol)-2, interval=2, blit=True)
+    ani = animation.FuncAnimation(fig, animate, frames=len(sol)-2, interval=20, blit=True)
     plt.close(fig)
     return ani
