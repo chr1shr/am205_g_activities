@@ -1,0 +1,150 @@
+# *************************************************************************************************
+# Harvard Applied Math 205 - Fall 2021.
+# Configuration and inputs for automated Makefile.
+#
+# Michael S. Emanuel
+# 2021-08-24
+# *************************************************************************************************
+
+# *************************************************************************************************
+# Inputs - manual settings that change the most
+# *************************************************************************************************
+
+# List of all executable targets; stem only
+TGT_EXE := 	\
+	00_minimal 01_hello 02_data_types 03_structures 04_functions 05_pointers \
+	11_c_array_auto 12_c_array_new 13_complex 14_containers 15_refs_pointers 16_pass_by_ref_ptr
+
+# Rule specific variables for extra dependencies
+04_functions: LINK_TGT := sqrt_iter
+05_pointers: LINK_TGT := matrix_mult
+
+# Create the object files to link against from the LINK_TGT variable
+$(TGT_EXE) : LINK_OBJ = patsubst(%, $(OBJ_DIR)/%.o, $(LINK_TGT))
+
+# *************************************************************************************************
+# Make configuration
+# *************************************************************************************************
+
+# Make settings: warn on unset variables, use parallel processing
+MAKEFLAGS+=--warn-undefined-variables -j
+
+# tab character
+TAB := $(shell printf "\t")
+
+# newline charactacter
+NEWLINE := $(shell printf "\n")
+
+# *************************************************************************************************
+# Set directory layout
+# *************************************************************************************************
+
+# Source directory
+SRC_DIR := src
+
+# Object directory
+OBJ_DIR := obj
+
+# Executable output directory
+EXE_DIR := exec
+
+# *************************************************************************************************
+# Compiler settings
+# *************************************************************************************************
+
+# C++ compiler
+CXX := g++
+
+# C++ Compilation flags for release and debug mode
+CXX_FLAGS_COMMON := -std=c++20 -Wall -Wextra -Wpedantic -Werror
+# Maximum optimization in release mode
+CXX_FLAGS_RLS := $(CXX_FLAGS_COMMON) -O3
+# Minimum optimization, -g flag and DEBUG macro in debug mode
+CXX_FLAGS_DBG := $(CXX_FLAGS_COMMON) -O0 -g -DDEBUG=""
+
+# Flag whether to build in debug mode; set to 1 to turn this on
+DEBUG := 0
+
+# Selected compilation type (release vs. debug)
+ifeq ($(shell test $(DEBUG) -gt 0; echo $$?),0)
+	CXX_FLAGS := $(CXX_FLAGS_DBG)
+else
+	CXX_FLAGS := $(CXX_FLAGS_RLS)
+endif
+
+# Flags to automatically generate dependencies during compilation
+# Do not include -MP, just -MMD; this provides output with just the dependencies for program.o
+# This type of output is compatible with the strategy for generating the linkage dependencies.
+DEP_FLAGS := -MMD
+
+# *************************************************************************************************
+# Macros
+# *************************************************************************************************
+
+# Manual macros
+MACROS_MANUAL :=
+
+# Macro for top-level directory of this installation
+MACRO_TOP_DIR := -DTOP_DIR="\"$(TOP_DIR)\""
+
+# Gather all macros passed to preprocessor using -D
+CXX_MACROS := $(MACROS_MANUAL)
+
+# *************************************************************************************************
+# INCLUDE: Include paths for additional software libraries 
+# *************************************************************************************************
+
+# Additional include directories passed to compiler with -I flag
+INCLUDE := 
+
+# *************************************************************************************************
+# LD: Linker flags for additional libraries
+# -L: additional library directories
+# -l: additional libraries in library search path named lib<library_name>.a
+# *************************************************************************************************
+
+# Additional library directories -L from all sources
+LD_DIRS := 
+
+# fmt (string formattng and printing)
+LD_FMT := -lfmt
+
+# Math library
+LD_MATH := -lm
+
+# BLAS/LAPACK (linear algebra)
+LD_LAPACK := -llapack -lblas
+
+# GNU Scientific Library (numerical computing)
+LD_GSL := -lgsl
+
+# GNU Multiprecision Library GMP
+LD_GMP := -lgmp
+
+# Selected libraries
+LD_LIBS := $(LD_FMT) $(LD_LAPACK) $(LD_GMP)
+
+# Combined LD_FLAGS arguments to linker - library search path and libraries
+LD_FLAGS := $(LD_DIRS) $(LD_LIBS)
+
+# *************************************************************************************************
+# Prettified flags and full compilation command
+# *************************************************************************************************
+
+# Prettify flags
+CXX_FLAGS := $(strip $(CXX_FLAGS))
+INCLUDE := $(strip $(INCLUDE))
+LD_FLAGS := $(strip $(LD_FLAGS))
+
+# Command to compile one executable file; uses rule specific variable TGT_NAME
+define CXX_COMPILE
+$(CXX) -c $(SRC_DIR)/$(TGT_NAME).cc -o $(OBJ_DIR)/$(TGT_NAME).o \$(NEWLINE)
+$(CXX_FLAGS) $(DEP_FLAGS) $(INCLUDE) $(CXX_MACROS)
+endef
+
+# $(CXX_FLAGS) $(INCLUDE) \$(NEWLINE)
+
+define CXX_LINK
+$(CXX) -o $(EXE_DIR)/$(TGT_NAME).x \
+$(OBJ_DIR)/$(TGT_NAME).o $(LINK_OBJ) $(LD_FLAGS)
+endef
