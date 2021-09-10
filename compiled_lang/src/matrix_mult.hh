@@ -11,7 +11,12 @@
 // *************************************************************************************************
 // Library dependencies
 #include <random>
+#ifdef __linux__
 #include <cblas.h>
+#endif
+#ifdef  __APPLE__
+#include <lapack/cblas.h>
+#endif
 
 // Alias type of the random number generator
 using rng_t = std::mt19937_64;

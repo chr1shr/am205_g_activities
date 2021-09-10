@@ -1,3 +1,4 @@
 # Ignore object files and executables
 *.o
 *.x
+*.d

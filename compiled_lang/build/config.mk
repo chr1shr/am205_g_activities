@@ -13,7 +13,8 @@
 # List of all executable targets; stem only
 TGT_EXE := 	\
 	00_minimal 01_hello 02_data_types 03_structures 04_functions 05_pointers \
-	11_c_array_auto 12_c_array_new 13_complex 14_containers 15_refs_pointers 16_pass_by_ref_ptr
+	11_c_array_auto 12_c_array_new 13_complex 14_containers 15_refs_pointers 16_pass_by_ref_ptr \
+	21_pi 
 
 # Rule specific variables for extra dependencies
 04_functions: LINK_TGT := sqrt_iter
@@ -23,11 +24,37 @@ TGT_EXE := 	\
 $(TGT_EXE) : LINK_OBJ = patsubst(%, $(OBJ_DIR)/%.o, $(LINK_TGT))
 
 # *************************************************************************************************
+# Check the operating system.  Supported OS Linux, Windows
+# *************************************************************************************************
+# https://stackoverflow.com/questions/714100/os-detecting-makefile
+
+# Is the OS Linux?
+ifeq ($(shell uname), Linux)
+	detected_OS := Linux
+endif
+
+# Is the OS Windows?
+ifeq ($(OS), Windows_NT)
+    detected_OS := Windows
+endif
+
+# Is the OS Mac?
+ifeq ($(shell uname), Darwin)
+    detected_OS := Mac
+endif
+
+# If the OS is not Linux, Windows or Mac, quit early: unsupported.
+ifndef detected_OS
+	$(error Unspported operating system!)
+endif
+
+# *************************************************************************************************
 # Make configuration
 # *************************************************************************************************
 
 # Make settings: warn on unset variables, use parallel processing
-MAKEFLAGS+=--warn-undefined-variables -j
+# MAKEFLAGS+=--warn-undefined-variables -j
+MAKEFLAGS+= -j
 
 # tab character
 TAB := $(shell printf "\t")
@@ -52,8 +79,13 @@ EXE_DIR := exec
 # Compiler settings
 # *************************************************************************************************
 
-# C++ compiler
-CXX := g++
+# C++ compiler is g++ on Linux and clang++ on Mac
+ifeq ($(detected_OS), Linux)
+	CXX := g++
+endif
+ifeq ($(detected_OS), Mac)
+	CXX := clang++
+endif
 
 # C++ Compilation flags for release and debug mode
 CXX_FLAGS_COMMON := -std=c++20 -Wall -Wextra -Wpedantic -Werror
@@ -97,6 +129,12 @@ CXX_MACROS := $(MACROS_MANUAL)
 # Additional include directories passed to compiler with -I flag
 INCLUDE := 
 
+# Add include location for MacPorts if we are on Mac OS
+ifeq ($(detected_OS), Mac)
+    INCLUDE += -I/opt/local/include
+	INCLUDE += -I/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers/
+endif
+
 # *************************************************************************************************
 # LD: Linker flags for additional libraries
 # -L: additional library directories
@@ -105,6 +143,12 @@ INCLUDE :=
 
 # Additional library directories -L from all sources
 LD_DIRS := 
+
+# Add library location for MacPorts if we are on Mac OS
+ifeq ($(detected_OS), Mac)
+    LD_DIRS += -L/opt/local/lib
+endif
+# LD_DIRS += -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework
 
 # fmt (string formattng and printing)
 LD_FMT := -lfmt
@@ -142,8 +186,7 @@ $(CXX) -c $(SRC_DIR)/$(TGT_NAME).cc -o $(OBJ_DIR)/$(TGT_NAME).o \$(NEWLINE)
 $(CXX_FLAGS) $(DEP_FLAGS) $(INCLUDE) $(CXX_MACROS)
 endef
 
-# $(CXX_FLAGS) $(INCLUDE) \$(NEWLINE)
-
+# Command to link one executable file; uses rule specific variables TGT_NAME and LINK_OBJ
 define CXX_LINK
 $(CXX) -o $(EXE_DIR)/$(TGT_NAME).x \
 $(OBJ_DIR)/$(TGT_NAME).o $(LINK_OBJ) $(LD_FLAGS)

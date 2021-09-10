@@ -31,7 +31,7 @@ struct Character
 
 // *************************************************************************************************
 // Declaration of function to print a character
-void print_character(Character& c);
+void print_character(const Character& c);
 
 // *************************************************************************************************
 int main()
@@ -51,7 +51,7 @@ int main()
 
 // *************************************************************************************************
 // Throwaway function to print character attributes
-void print_character(Character& c)
+void print_character(const Character& c)
 {
     print("********************************************************************************\n");
     print("Name: {:s}\n", c.name);

@@ -4,6 +4,25 @@
 # *************************************************************************************************
 
 # *************************************************************************************************
+# Detect Operating System
+# *************************************************************************************************
+
+# Is the OS Linux?
+ifeq ($(shell uname), Linux)
+	detected_OS := Linux
+endif
+
+# Is the OS Windows?
+ifeq ($(OS), Windows_NT)
+    detected_OS := Windows
+endif
+
+# Is the OS Mac?
+ifeq ($(shell uname), Darwin)
+    detected_OS := Mac
+endif
+
+# *************************************************************************************************
 # Configuration options
 # *************************************************************************************************
 
@@ -16,8 +35,13 @@ SRC_DIR := src
 OBJ_DIR := obj
 EXE_DIR := exec
 
-# C++ compiler
-CXX := g++
+# C++ compiler is g++ on Linux and clang++ on Mac
+ifeq ($(detected_OS), Linux)
+	CXX := g++
+endif
+ifeq ($(detected_OS), Mac)
+	CXX := clang++
+endif
 
 # C++ Compilation flags
 CXX_FLAGS := -std=c++20 -Wall -Wextra -Wpedantic -Werror -O3
@@ -25,11 +49,24 @@ CXX_FLAGS := -std=c++20 -Wall -Wextra -Wpedantic -Werror -O3
 # Additional include directories passed to compiler with -I flag
 INCLUDE := 
 
+# Add include location for MacPorts if we are on Mac OS
+ifeq ($(detected_OS), Mac)
+    INCLUDE += -I/opt/local/include
+	INCLUDE += -I/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework/Headers/
+endif
+
 # Macros for C++ preprocessor
 CXX_MACROS :=
 
-# Selected libraries
+# Library locations
 LD_DIRS := 
+# Add library location for MacPorts if we are on Mac OS
+ifeq ($(detected_OS), Mac)
+    LD_DIRS += -L/opt/local/lib
+endif
+# LD_DIRS += -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework/Versions/Current/Frameworks/vecLib.framework
+
+# Selected libraries
 LD_LIBS := -lfmt -lblas -lgmp
 
 # Combined LD_FLAGS arguments to linker - library search path and libraries
@@ -42,7 +79,8 @@ LD_FLAGS := $(strip $(LD_DIRS) $(LD_LIBS))
 # All the executable targets (stem only)
 TGT_EXE := \
 	00_minimal 01_hello 02_data_types 03_structures 04_functions 05_pointers \
-	11_c_array_auto 12_c_array_new 13_complex 14_containers 15_refs_pointers 16_pass_by_ref_ptr 
+	11_c_array_auto 12_c_array_new 13_complex 14_containers 15_refs_pointers 16_pass_by_ref_ptr \
+	21_pi 
 # $(info TGT_EXE = $(TGT_EXE))
 
 # Executable program files - build from targets list

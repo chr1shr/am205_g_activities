@@ -43,12 +43,17 @@ int main()
         for (int j=0;j<N;j++) 
         {
             // The complex number z we want to save in this slot
-            complex z = z_corner + complex<double>(dh*i, dh*j);
+            complex<double> z {z_corner + complex<double>(dh*i, dh*j)};
             // Save z into the array index k corresponding to (i, j)
             int k {ij2k(i, j, N)};
             initial_guess[k] = z;
             // Report (i,j) entry
-            print("Matrix entry ({:i}, {:j}} = ({:+4.2f} {:+4.2f}i)", i, j, z.real(), z.imag());
+            #ifdef __linux__
+            print("Matrix entry ({:i}, {:j}) = ({:+4.2f} {:+4.2f}i)", i, j, z.real(), z.imag());
+            #endif
+            #ifdef __APPLE__
+            printf("Matrix entry (%d, %d} = (%+4.2f %+4.2fi)\n", i, j, z.real(), z.imag());
+            #endif
         }
     }
 
