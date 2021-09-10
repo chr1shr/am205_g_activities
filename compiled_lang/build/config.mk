@@ -13,8 +13,7 @@
 # List of all executable targets; stem only
 TGT_EXE := 	\
 	00_minimal 01_hello 02_data_types 03_structures 04_functions 05_pointers \
-	11_c_array_auto 12_c_array_new 13_complex 14_containers 15_refs_pointers 16_pass_by_ref_ptr \
-	21_pi 
+	11_c_array_auto 12_c_array_new 13_complex 14_containers 15_refs_pointers 16_pass_by_ref_ptr 
 
 # Rule specific variables for extra dependencies
 04_functions: LINK_TGT := sqrt_iter
