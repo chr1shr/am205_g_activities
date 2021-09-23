@@ -1,0 +1,299 @@
+\documentclass{article}
+\usepackage{hyperref}       	% hyperlinks
+\usepackage{url}            	% simple URL typesetting
+\usepackage{amsfonts}       	% blackboard math symbols
+\usepackage{nicefrac}       	% compact symbols for 1/2, etc.
+\usepackage{color}
+\usepackage{amsmath}
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\vx}{\vec{x}}
+\newcommand{\ve}{\vec{e}}
+\newcommand{\vw}{\vec{w}}
+\newcommand{\vz}{\vec{z}}
+\newcommand{\vv}{\vec{v}}
+\newcommand{\vA}{\vec{A}}
+\newcommand{\vB}{\vec{B}}
+\newcommand{\vP}{\vec{P}}
+\newcommand{\vK}{\vec{K}}
+\newcommand{\vH}{\vec{H}}
+\newcommand{\vQ}{\vec{Q}}
+\newcommand{\vR}{\vec{R}}
+\newcommand{\vL}{\vec{L}}
+\newcommand{\pt}{\partial}
+\newcommand{\vu}{\vec{u}}
+\newcommand{\Ident}{\mathbf{1}}
+
+\title{AM205 Workshop: The Kalman Filter}
+\author{Notes Written by Yuexia Luna Lin (Fall 2020)}
+\date{Presented by Michael S. Emanuel \\
+23-Sep-2021}
+
+\begin{document}
+\maketitle
+
+In the noisy world that we live in, the Kalman filter provides a way to combine our model of a system and the measurements we make from that system, to estimate the state of the system. Filtering describes the process of separating noise from signal. In the case of Kalman filter, we not only filter out the noise, but also make a prediction on the future state of the system, as well as the probability distributions of the state variables. We can view the Kalman Filter as finding an estimate of the state that has minimal variance, given measurements.
+
+Named after the Hungarian-American electrical engineer and mathematician, Rudolf Kalman, Kalman filters have been widely applied since its development in the 1960s. During the Apollo 11 moon landing mission, Kalman filter was used to estimate the spacecraft's coordinates, given Newtonian models of orbital dynamics and the onboard sensor measurements. Kalman filter's use in navigation has been extended to individual use, in GPS systems in our phones and cars. For another instance, Kalman filter is also indispensable for manufacturing, when engineers need to know the positions of motors and other mechanical parts but cannot directly or frequently measure them. Although we will not cover it here, Kalman filter has been extended and modified to work with large scale, nonlinear dynamics, like in weather forecasting.
+
+In this tutorial, we will learn how to derive the basic algorithm of Kalman filter in a discrete time system, given two assumptions:
+\begin{enumerate}
+\item The dynamical system is linear.
+\item The noise in the system is Gaussian distributed white noise, categorized as disturbances to the input, $\vw$, and measurement noise $\vv$.
+\end{enumerate}
+Our aim is to create an \textit{iterative} algorithm that estimates the state $\hat \vx_{k+1}$ and the covariance matrix $\vP_{k+1}$ at the next time step $t=k+1$, based on our current estimate $\hat \vx_{k}$ and $\vP_{k}$, and measurement $\vz_k$. A key quantity in this calculation is the \textit{Kalman gain} at time step $k$, $\vK_k$, which give the optimal combination of model predictions and data measurements based on the strength of noises.
+
+\section*{The 1D case}
+Consider a discrete time 1D dynamical system with state variable $x$. We make a measurement $z$. There are noises in the input as well as in the measurement,
+%%%%%%%%%%%%%
+\begin{equation}
+\begin{aligned}
+x_{k+1} &= \phi x_k + w\\
+z_{k+1} &= x_{k+1} + v
+\end{aligned}
+\end{equation}
+where $w\sim \mathcal{N}(0,\tau^2)$ and $v\sim \mathcal{N}(0, \sigma^2)$.
+
+Given initial conditions $x_0, P_0$, where $P_0$ is the variance in the initial condition $x_0$, we will get to an estimate of $ x_1$ 
+that maximizes the probability of the state being $x_1$ given measurement $z_1$, i.e. $p(x_1 | z_1)$.
+Using Bayes' rule, we have,
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:Bayes}
+p( x_1 | z_1) \propto p(z_1 | x_1) p(x_1)
+\end{equation}
+We use $\propto$ because we haven't included a normalization factor. For our purpose here, it's not super important.
+
+We know that the measurement noise probability density is $\mathcal{N} (0, \sigma^2)$ around the mean $x_1$.
+So $p(z_1 | x_1) \sim \mathcal{N} (x_1, \sigma^2)$.
+However, we have to compute $p(x_1)$ before data becomes available, using the law of total probability,
+%%%%%%%%%%%%%
+\begin{equation}
+\begin{aligned}
+\label{eq:px1}
+p(x_1) &= \int p(x_1 | x_0) p(x_0) dx_0\\
+ &= \int \mathcal{N} (\phi x_0, \tau^2) \times \mathcal{N} (x_0, P_0) dx_0\\
+ &=\mathcal{N} (\phi x_0, \phi^2 P_0 + \tau^2)\\
+ &=\mathcal{N} (\hat x_1, \hat P_1)
+ \end{aligned}
+\end{equation}
+where we defined a predictor estimate of state $\hat x_1 = \phi x_0$ and variance $\hat P_1 = \phi^2 P_0 + \tau^2$.
+The intuition behind the second to the third line is that the initial variance $P_0$ gets amplified by the linear dynamics by a multiplicative factor ($\phi^2$)
+as well as a Gaussian white noise by an additive factor ($\tau^2$).
+
+So now we can revisit Eq.~\ref{eq:Bayes},
+%%%%%%%%%%%%%
+\begin{equation}
+\begin{aligned}
+p(x_1 | z_1) & \propto p(z_1 | x_1) p(x_1) \\
+&=  \mathcal{N} (x_1, \sigma^2) \times \mathcal{N} (\hat x_1, \hat P_1)\\
+&\propto \exp \left(- \frac{(z_1- x_1)^2}{2\sigma^2} \right) \exp \left (-\frac{(x_1 - \hat x_1)^2}{2\hat P_1}\right)
+\end{aligned}
+\end{equation}
+We maximize the log of the posterior,
+%%%%%%%%%%%%%
+\begin{equation}
+\begin{aligned}
+\frac{\pt \log p(x_1 | z_1)}{\pt x_1} & = - \frac{(x_1 - z_1)}{\sigma^2} - \frac{(x_1 - \hat x_1)}{\hat P_1} = 0 \\
+\to x_1 &= \left (\frac{z_1}{\sigma^2} + \frac{\hat x_1}{\hat P_1} \right) \bigg / \left( \frac{1}{\sigma^2} + \frac{1}{\hat P_1} \right)\\
+&= \frac{\hat P_1 z_1 + \sigma^2 \hat x_1}{\hat P_1 + \sigma^2}\\
+& = \hat x_1 + K_1 (z_1 - \hat x_1); ~~K_1 \equiv \frac{\hat P_1}{\hat P_1 + \sigma^2}
+\end{aligned}
+\end{equation}
+By trying to maximize the conditional probability $p(x_1 | z_1)$, we not only have derived the optimal estimate $x_1$, we have also derived a key quantity, \textit{Kalman gain}, $K_1$.
+We can also derive the variance of the conditional probability distribution, 
+\begin{equation}
+ P_1 = (1-K_1) \hat P_1
+ \end{equation}
+\iffalse 
+, by defining random variable $X= (1 - K_1) \hat x_1$, $Z = K_1 z_1$, 
+and $Y = X+Z$, using the covariance formula,
+\begin{equation}
+%%%%%%%%%%%%%
+\begin{aligned}
+var(Y) & = cov(Y, Y) = cov(X+Z, X+Z) \\
+& = cov(X,X) + cov(Z, Z) + 2cov(X,Z) \\
+& = (1-K_1)^2 \hat P_1 + K_1^2 \sigma^2 \\
+& = \frac{ \hat P_1 \sigma^4 + \hat P_1^2 \sigma^2 }{ (\hat P_1 + \sigma^2)^2 } = \frac{\hat P_1 \sigma^2 (\sigma^2 + \hat P_1 )}{(\hat P_1 + \sigma^2)^2} \\
+& =(1-K_1) \hat P_1 \equiv P_1
+\end{aligned}
+\end{equation}
+\fi
+Now we have completed one entire step. Notice at each step, we only need $x_k$ and $P_k$ from the previous step, and to wait for data $z_k$ to become available.
+Next, let's see how Kalman Filter is extended to multi-dimensional systems.
+
+\section*{The general case}
+Consider a system or a process that can be modeled by a linear dynamical system with $N$ state variables,
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:dynamics}
+\vx_{k+1}  = \vA \vx_k  + \vB \vu_k + \vw
+\end{equation}
+where $\vA$ is $N\times N$ the transition matrix, $\vx_k$, $\vx_{k+1}$ are column vectors of state variables at time $k$ and $k+1$, respectively, and $\vw$ is Gaussian white noise disturbance in the input. The term $\vB \vu_k$ can be used to represent control or explicitly time dependent quantities, if applicable.
+
+The measurement vector, $\vz_k$, has $M$ elements, is also subject to noise,
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:measurement}
+\vz_k = \vH \vx_k + \vv
+\end{equation}
+where $\vH$ is the $M\times N$ connection matrix between the state vector and the measurement vector, and $\vv$ is Gaussian white noise in the measurements.
+
+Denote an estimate of the state as $\hat \vx_k$, and the estimation error $\ve_k = \vx_k - \hat \vx_k $. The cost function to be minimized as the covariance matrix of the errors,
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:err_cov}
+\vP_k = E \left( \ve_k \ve_k^\mathsf{T} \right)  = E\left ( (\vx_k - \hat \vx_k ) (\vx_k - \hat \vx_k)^\mathsf{T}\right) 
+\end{equation}
+The use of the covariance matrices enables us to not only track the state of the dynamics, but also get a sense of the probability distribution of the state variables. For convenience, we also construct covariance matrices of noise in the system, we have
+%%%%%%%%%%%%%%
+\begin{align}
+\label{eq:noise_cov}
+\vQ &= E\left (\vw \vw^\mathsf{T} \right)\\
+\vR &= E\left(\vv\vv^{\mathsf{T}} \right)
+\end{align}
+We assume we can quantify $\vQ$ and $\vR$ and that they are time-invariant in our system. 
+
+Typically, the covariance of a column vector $\vx$ is computed as 
+%%%%%%%%%%%%%
+\begin{equation}
+cov(\vx) = \int_{-\infty} ^ {\infty} \int_{-\infty}^{\infty} (\vx - \bar {\vx}) (\vx - \bar {\vx}) ^\mathsf{T} p(\vx) dx_1 dx_2 ... dx_N
+\end{equation}
+So to compute the covariance of $\ve_k$, we will need to know the true state and the state estimate. But how do we get $\vP_k$ if we don't have access to the true state $\vx_k$?
+Next we will derive an update rule for $\hat \vx_k$ and  $\vP_k$,  given initial condition $\vx_0$ and $\vP_0$.
+
+\section*{Derive the algorithm}
+Kalman filter has two steps, a predictor step and a corrector step.
+Suppose we have just finished time step $k-1$ and begun time step $k$. We have our last best estimate $\hat \vx_{k-1}$ and $\vP_{k-1}$, as well as the latest measurement $\vz_k$. Our goal is to use these quantities to create an optimal estimate $\hat \vx_k$ that minimizes $\vP_k$.
+
+\subsection*{Predictor step}
+First, in the predictor step, we use our model to calculate an \textit{a priori} estimate at time step $k$,
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:naive_pred}
+\hat \vx_k^p = \vA \hat \vx_{k-1} + \vB \vu_{k-1}
+\end{equation}
+where superscript $p$ denotes ``predict,'' and we assume $\vB \vu_k$ is known at all time.
+We also compute a predicted covariance using Eq.~\ref{eq:dynamics} and \ref{eq:err_cov},
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:pred_cov}
+\begin{aligned}
+\vP_k^{p} &= E\left ( (\vx_k - \hat \vx_k^p ) (\vx_k - \hat \vx_k^p)^\mathsf{T} \right) \\
+&= E \left( ( \vA \vx_{k-1}  + \vB \vu_{k-1} + \vw_{k-1} -  \vA \hat \vx_{k-1} ) ( \vA \vx_{k-1} + \vw_{k-1} + \vB \vu_{k-1} -  \vA \hat \vx_{k-1})^\mathsf{T}  \right) \\
+& = E\left( (\vA \ve_{k-1} + \vB \vu_{k-1} + \vw_{k-1}) (\vA \ve_{k-1} + \vB \vu_{k-1} + \vw_{k-1})^\mathsf{T} \right) \\
+& = \vA \vP_{k-1} \vA^\mathsf{T}+ \vQ
+\end{aligned}
+\end{equation}
+Here we have used our assumption that $\vB \vu_{k-1}$ is known exactly, therefore, doesn't contribute to any covariance. Note that the term $\ve_{k-1}$ encapsulates all the error accumulated up to step $k-1$, and the term $\vw_{k-1}$ denotes the noise in between step $k-1$ and $k$, thus, the two terms are completely independent, and have covariance $0$.
+
+\subsection*{Corrector step}
+Next, if data becomes available, we combine the naive prediction $\hat \vx_k^p$ and the measurement $\vz_k$ by 
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:combined}
+\hat \vx_k  = \hat \vx_k^p + \vK_k (\vz_k - \vH \hat \vx_k^p)
+\end{equation}
+The term in the parenthesis, $\vz_k - \vH \hat \vx_k^p$, is called the \textit{measurement residual}. It can be interpreted as the new information given by the measurement after subtracting what we think we know based on the predicted estimate $\hat \vx_k^p$.
+$\vK_k$ is the \textit{Kalman gain} that will balance our confidence in the \textit{a priori} model prediction and in the measurements. Like what we have seen in the 1D case, by minimizing the cost function, we will have an expression for the Kalman gain.
+
+Now we expand $\vz_k$ in Eq. \ref{eq:combined} using Eq. \ref{eq:measurement}, and get
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:combined_expanded}
+\begin{aligned}
+\hat \vx_k & = \hat \vx_k^p + \vK_k ( \vH \vx_k + \vv - \vH \hat \vx_k^p)\\
+		& = (\Ident - \vK_k \vH) \hat \vx_k^p +  \vK_k \vH \vx_k + \vK_k \vv
+\end{aligned}
+\end{equation}
+Note that we don't know the true state $\vx_k$, it just comes along for the ride in the math. 
+
+
+Since we want to minimize the error covariance, we plug Eq. \ref{eq:combined_expanded} in to expression of error covariance, Eq. \ref{eq:err_cov}, 
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:err_cov_2}
+\vP_k = E\big( \left[  (\Ident - \vK_k \vH) (\vx_k - \hat \vx_k^p)  - \vK_k \vv  \right] \left[ (\Ident - \vK_k \vH) (\vx_k - \hat \vx_k^p)  - \vK_k \vv  \right] ^\mathsf{T} \big)
+\end{equation}
+Given we have assumed Gaussian white noise, we can assume that the cross terms in the expression above are zero.
+Expand the equation above, with 
+$\vR = E(\vv \vv^\mathsf{T})$, we have
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:err_cov_3}
+\begin{aligned}
+\vP_k &= E\big(  (\Ident - \vK_k \vH)  (\vx_k - \hat \vx_k^p)  (\vx_k - \hat \vx_k^p)^\mathsf{T}  (\Ident - \vK_k \vH)^\mathsf{T}  + \vK_k \vv \vv^\mathsf{T} \vK_k^\mathsf{T}  \big) \\
+& =  (\Ident - \vK_k \vH)  \vP_k^{p}   (\Ident - \vK_k \vH)^\mathsf{T}  +  \vK_k \vR \vK_k^\mathsf{T} 
+\end{aligned}
+\end{equation}
+where $  \vP_k^{p} $ is the error covariance calculated using Eq.~\ref{eq:pred_cov}.
+
+
+Note the trace of the covariance matrix, $tr(\vP_k)$, is the total variance, i.e. the sum of the population variances.
+We minimize $tr(\vP_k)$ with respect to $\vK_k$\footnote{See wikipedia page for scalar-matrix differentiation.}, by setting the following to zero,
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:minimizing}
+\frac{\pt tr(\vP_k)}{\pt \vK _k} = -2(\vH  \vP_k^{p}) ^\mathsf{T} + 2\vK_k (\vH  \vP_k^{p} \vH^\mathsf{T} + \vR)=0
+\end{equation}
+We solves for an expression for $\vK_k$,
+%%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:kalman_gain}
+\vK_k =   \vP_k^{p} \vH^\mathsf{T} (  \vH \vP_k^{p} \vH^\mathsf{T} + \vR)^{-1}
+\end{equation}
+
+Use Eq.~\ref{eq:kalman_gain} in Eq.~\ref{eq:combined}, we get the corrected estimate, $\hat \vx_k$.
+Just as in our intuition, we can see in the structure of $\vK_k$, heuristically, if the covariance in measurements $\vR$ is large compared that in the predicted estimation, $\vK_k$ would reduce the contribution of the measurement to the correctedd estimate, and vice versa. 
+
+Use Eq.~\ref{eq:kalman_gain} in Eq.~\ref{eq:err_cov_3}, we get the corrected covariance. We can simplify by,
+%%%%%%%%%%%%%
+\begin{equation}
+\begin{aligned}
+\label{eq:update_pk}
+\vP_k &=  \vP_k^{p} -  \vP_k^{p} \vH^\mathsf{T} ( \vH  \vP_k^{p} \vH^\mathsf{T} + \vR)^{-1} \vH  \vP_k^{p}\\
+&=  \vP_k^{p} -  \vK_k \vH  \vP_k^{p} \\
+&= (\Ident - \vK_k \vH) \vP_k^{p}
+\end{aligned}
+\end{equation}
+The expression for covariance in Eq.~\ref{eq:update_pk} is computationally efficient compared to the full formula Eq.~\ref{eq:err_cov_3}. However, due to factors including finite precision arithmetic, it's prone to numerical errors and loss of symmetry.
+In these instances, the full formula should be used.
+
+Now we have completed one iteration by deriving the quantities needed for the next time step, $\hat \vx_k$ and $\vP_k$. If data is not available in this time step, we can simply skip the corrector step,
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:no_data}
+\hat \vx_k = \hat \vx^p_k ; ~~~\vP_k = \vP^p_k
+\end{equation}
+
+\section*{Final remarks}
+Kalman filter is a method within the broader category of linear-quadratic problems. 
+A linear-quadratic problem is one where the system dynamics can be described by linear differential equations,
+and the cost to be optimized is a quadratic function. 
+
+Kalman filter is a linear-quadratic estimator, it estimates the state of the system. There are other well-known methods that follow similar ideas we have seen in the
+derivation of Kalman filter, e.g. linear-quadratic regulator (LQR). Combining LQR with Kalman Filter gives us linear-quadratic Gaussian control (LQG).
+\iffalse
+In a control system, an additional term represents that control $\vu$ is used to achieve a desired state, i.e.
+%%%%%%%%%%%%%
+\begin{equation}
+\begin{aligned}
+\vx_{k+1} &= \vA \vx_{k}  + \vB \vu_k + \vw_k\\
+\vz_k &= \vH \vx_k + \vv_k
+\end{aligned}
+\end{equation}
+Using a similar idea as the one we have just seen in Kalman filter, we can design the Linear-Quadratic Regulator (LQR) that gives the optimal control given quadratic cost. Suppose the control system terminate in $T$ time steps, we define the cost function to be minimized as 
+%%%%%%%%%%%%%
+\begin{equation}
+\label{eq:J}
+J = E \bigg( \vx^\mathsf{T}_L F \vx_L 
++ \sum_{k=0}^{T-1} ( \vx^\mathsf{T} _k \vQ_k \vx_k + \vu^\mathsf{T} _k \vR_k \vu_k ) \bigg)
+\end{equation}
+where I have abused notation to let $\vQ_k$ and $\vR_k$ denote prescribed state and control penalty matrices, to be more consistent with notations in the literature. The intuition behind these matrices $\vQ_k$ and $\vR_k$ is $\vQ_k$ is associated with the penalty we assign when the system misses the desired state, and $\vR_k$ is associated with the cost of actuation in the controls.
+
+The control vector $\vu_k$ can be expressed as
+$\vu_k = -\vL_k \hat{\vx}_k$, and we can minimize Eq.~\ref{eq:J} with respect to $\vL_k$, which is called a feedback gain matrix.
+Using a Kalman filter to estimate the state of a system, then using LQR to build an optimal control in combination, is called Linear-Quadratic-Gaussian control\footnote{ The complete derivation of LQR is out of the scope in this tutorial. See sites e.g. wikipedia for more detail. Prof. Steve Brunton offers control Bootcamp on YouTube if this is something that interests you.}
+\fi
+For those who are interested, there are much more information about Kalman Filter, LQR, LQG on the web. For starters, I particularly like Prof. Steve Brunton's YouTube series called ``Control Bootcamp.''
+
+\end{document}

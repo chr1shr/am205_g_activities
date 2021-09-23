@@ -1,0 +1,102 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{abstract}
+\usepackage{ marvosym }
+\usepackage[margin=1in]{geometry}
+\usepackage{amssymb }
+\usepackage{bm}
+\usepackage{amsmath,amsthm}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{bm}
+\usepackage{dsfont }
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{stackengine}
+\usepackage{soul}
+
+\hypersetup{
+   colorlinks=true, linktocpage=true, pdfstartpage=3, pdfstartview=FitV,
+   breaklinks=true, pdfpagemode=UseNone, pageanchor=true, pdfpagemode=UseOutlines,
+   plainpages=false, bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=1,
+   hypertexnames=true, pdfhighlight=/O,
+   urlcolor=blue, linkcolor=blue, citecolor=green,
+   pdfauthor={Michael S. Emanuel},
+   pdfsubject={Harvard AM205 (Fall 2021)},
+   pdfkeywords={},
+   pdfcreator={pdfLaTeX},
+   pdfproducer={LaTeX with hyperref}
+}
+
+% Luna Lin Kalman Filter commands
+\newcommand{\vx}{\vec{x}}
+\newcommand{\ve}{\vec{e}}
+\newcommand{\vw}{\vec{w}}
+\newcommand{\vz}{\vec{z}}
+\newcommand{\vv}{\vec{v}}
+\newcommand{\vA}{\vec{A}}
+\newcommand{\vB}{\vec{B}}
+\newcommand{\vP}{\vec{P}}
+\newcommand{\vK}{\vec{K}}
+\newcommand{\vH}{\vec{H}}
+\newcommand{\vQ}{\vec{Q}}
+\newcommand{\vR}{\vec{R}}
+\newcommand{\vL}{\vec{L}}
+\newcommand{\pt}{\partial}
+\newcommand{\vu}{\vec{u}}
+\newcommand{\Ident}{\mathbf{1}}
+
+\title{Applied Math 205: Kalman Filters - Exercise}
+\author{Originally by Luna Yuexia Lin}
+\date{Assigned by Michael S. Emanuel\\
+Due: 04-Oct-2021}
+\graphicspath{{figs/}}
+
+\begin{document}
+\maketitle
+
+\textbf{Submit a PDF write-up and separate code files for full credit.}
+
+Consider a projectile launched from the ground at $(x, y) = (0, 0)$ with initial velocity $(u, v) = (50, 100)$.
+The equations of motion, in the absence of noise, are
+%%%%%%%%%%%%%
+\begin{equation}
+\begin{aligned}
+\label{eq:dynamics}
+\dot x &= u \\
+\dot y &= v \\
+\dot u & = 0 \\
+\dot v & = -g
+\end{aligned}
+\end{equation}
+where $g = 9.8 m/s$ is the gravitational acceleration.
+We discretize time by using a constant time step $dt$, and assume that the input white noise, $w\sim \mathcal{N} (0, \tau^2)$, has the same dimension as velocity,
+%%%%%%%%%%%%%
+\begin{equation}
+\begin{aligned}
+\label{eq:projectile}
+x_{k+1} &= x_k + u dt + w dt \\
+y_{k+1} &= y_k + v dt + w dt \\
+u_{k+1} & = u_{k} + w \\
+v_{k+1} & = v_{k} - g dt + w
+\end{aligned}
+\end{equation}
+Also we assume we know the initial condition perfectly, so $\vP_0 = \vec{0}$. 
+\\
+\noindent (a) Use the state vector $\vx = [x, y, u, v]^\mathsf{T}$, 
+formulate the dynamics in Eq.~\ref{eq:projectile} in matrix form as in Eq. 7 of the notes. 
+Report the linear system in your write-up. \\
+\noindent (b) Use any programming language you like, do the following:
+\begin{enumerate}
+\item Use your linear system from part (a), with $dt = 0.005s$, and $\tau = 0.2 m/s$, to simulate a projectile trajectory until $T=25s$ or until the projectile hits the ground ($y\le0$), whichever happens first. This is our ground truth.
+\item Code a function to generate noisy measurements of the projectile's position, $(x, y)$, by adding a Gaussian noise $v\sim \mathcal{N} (0, \sigma^2)$, where $\sigma = 10 m$. Write out connection matrix $\vH$ in this case in the measurement equation as in Eq. 8 in your write-up. Set the measurement frequency to be every $N_{freq}$ time steps. 
+\item Code a Kalman filter to estimate the projectile trajectory at every time step, incorporate the measurements you make in (b) when they become available. Note that when there is no measurement, the predictor estimates are not corrected by data.
+\item Using $N_{freq} = 1$, plot the true projectile trajectory, the measurements, and the Kalman filtered trajectory, overlaid on top of one another in Fig.~1. Make sure to label the curves.
+\item For Fig.~2, generate another plot just like Fig.~1 but use $N_{freq}=500$. 
+\item What happens when the values of $\tau$ and $\sigma$ change? Some interesting things to try are extreme values of $\tau$ and $\sigma$. For Fig.~3, generate another plot like Fig.~1, with $\tau$ and $\sigma$ values of your choice. Report the values of $\tau$ and $\sigma$ in your figure caption or title.
+\end{enumerate}
+
+\end{document}
