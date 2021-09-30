@@ -1,4 +1,4 @@
-# Data-driven ynamic mode decomposition
+# Data-driven dynamic mode decomposition
 This git repository contains the Jupyter notebook and code presented at the "Data-driven dynamic mode decomposition" workshop. For slides please see the "[Group Activities](https://courses.seas.harvard.edu/courses/am205/g_act/index.html#multithreading)" tab on the main website.
 
 The workshop contains two exercises for learning the dynamic mode decomposition in ```dmd_assignment.ipynb```:
