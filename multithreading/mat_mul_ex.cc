@@ -69,19 +69,13 @@ int main(int argc,char** argv) {
 
     // Do matrix multiplies for a speficied time
     while(T<Tmin) {
-        // Loop over rows of out vector
-        /***************************************/
-        /********** FILL IN CODE HERE **********/
-        /***************************************/
-        // Step 1: Put in the omp command
 
-        // Step 2: Double for-loop on the matrix entry
-
-        // Step 3: Do matrix and vector multiplication
-
-        /***************************************/
-        /***************** END *****************/
-        /***************************************/
+#pragma omp parallel for num_threads(nt)
+        for(int i=0;i<N;i++) {
+            for(int j=0;j<N;j++) {
+                w[i]+=M[i+j*N]*v[j]
+            }
+        }
         
         T=omp_get_wtime()-t0; // Update time
         iters++; // Count iterations
