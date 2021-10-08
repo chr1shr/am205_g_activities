@@ -25,7 +25,7 @@ us=np.empty((m,snaps+1)) # memory for all snapshots
 k=100
 for j in range(mp2):
     x=-1+dx*j
-    u[j]=1./(1+np.exp(-k*x)) # smooth function
+    u[j]=1./(1+np.exp(-k*x)) # sigmoid function
 u1=np.copy(u)
 us[:,0]=u[:m]
 
