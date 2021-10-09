@@ -3,13 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import *
 
-# Linear advection example on [-1,1] using 2nd order upwinding.
+# Linear advection example on [-1,1] using simple upwinding scheme.
 
 # Grid size
 m=200
 mp2=m+2 # pad with 2 ghost nodes
 # PDE-related constants.
-c=-1.
+c=1.
 dx=2.0/(m-1)
 dt=0.05*dx
 nu=c*dt/dx
@@ -23,9 +23,13 @@ us=np.empty((m,snaps+1)) # memory for all snapshots
 
 # Initial condition
 k=100
-for j in range(mp2):
+for j in range(m):
     x=-1+dx*j
     u[j]=1./(1+np.exp(-k*x)) # sigmoid function
+# The ghost nodes at u[m]=u[-2], u[m+1]=u[-1] correspond to
+# positions x=-1-2dx, x=-1-dx, respectively.
+u[-1]=1./(1+np.exp(-k*(-1-dx)))
+u[-2]=1./(1+np.exp(-k*(-1-2*dx)))
 u1=np.copy(u)
 us[:,0]=u[:m]
 
@@ -33,7 +37,7 @@ us[:,0]=u[:m]
 for i in range(1,snaps+1):
     for k in range(iters):
         for j in range(m):
-            u1[j]=u[j]-0.5*nu*(-u[j+2]+4*u[j+1]-3*u[j]) # 2nd order upwinding scheme
+            u1[j]=u[j]-0.5*nu*(u[j-2]-4*u[j-1]+3*u[j]) # 2nd order upwinding scheme
         u=np.copy(u1)
     us[:,i]=u[:m]
 
