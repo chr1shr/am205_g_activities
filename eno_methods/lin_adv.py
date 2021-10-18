@@ -6,12 +6,12 @@ from math import *
 # Linear advection example on [-1,1] using simple upwinding scheme.
 
 # Grid size
-m=200
+m=201
 mp2=m+2 # pad with 2 ghost nodes
 # PDE-related constants.
 c=1.
 dx=2.0/(m-1)
-dt=0.05*dx
+dt=0.001
 nu=c*dt/dx
 T=1. # final simulation time
 snaps=10 # number of snapshots to output (excluding t=0)
