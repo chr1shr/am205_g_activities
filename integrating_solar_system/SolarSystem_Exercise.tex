@@ -1,0 +1,181 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{abstract}
+\usepackage{ marvosym }
+\usepackage[margin=1in]{geometry}
+\usepackage{amssymb }
+\usepackage{bm}
+\usepackage{amsmath,amsthm}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{bm}
+\usepackage{dsfont }
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{stackengine}
+\usepackage{soul}
+
+\hypersetup{
+   colorlinks=true, linktocpage=true, pdfstartpage=3, pdfstartview=FitV,
+   breaklinks=true, pdfpagemode=UseNone, pageanchor=true, pdfpagemode=UseOutlines,
+   plainpages=false, bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=1,
+   hypertexnames=true, pdfhighlight=/O,
+   urlcolor=blue, linkcolor=blue, citecolor=green,
+   pdfauthor={Michael S. Emanuel},
+   pdfsubject={Harvard AM205 (Fall 2021)},
+   pdfkeywords={},
+   pdfcreator={pdfLaTeX},
+   pdfproducer={LaTeX with hyperref}
+}
+
+% Original commands
+\newcommand{\nnn}{\\ \nonumber \\ \nonumber}
+
+% MSE Misc
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\half}{\frac{1}{2}}
+\newcommand{\grad}{\nabla}
+\newcommand{\loss}{\mathcal{L}}
+\newcommand{\sign}{\text{sign}}
+\newcommand{\nn}{\nonumber \\}
+
+% MSE statistics
+\newcommand{\E}{\mathrm{E}}
+\newcommand{\var}{\mathrm{Var}}
+\newcommand{\cov}{\mathrm{Cov}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\pois}{\mathrm{Pois}}
+\newcommand{\thetavec}{\bm{\theta}}
+\newcommand{\thetavechat}{\hat{\bm{\theta}}}
+\newcommand{\phihat}{\hat{\phi}}
+\newcommand{\rr}{\bm{r}}
+\newcommand{\FIX}{\mathcal{I}_{\mathbf{X}}}
+
+% Block matrices
+\newcommand*{\vertbar}{\rule[-1ex]{0.5pt}{2.5ex}}
+\newcommand*{\horzbar}{\rule[.5ex]{2.5ex}{0.5pt}}
+
+% MSE terminal
+\newcommand{\tty}[1]{\texttt{#1}}
+
+\title{Applied Math 205: Integrating the Solar System - Exercise}
+\author{Michael S. Emanuel}
+\date{Assigned: 29-Oct-2021}
+\graphicspath{{figs/}}
+
+\begin{document}
+\maketitle
+
+\noindent
+\section*{Near Approach of Asteroid Apophis}
+
+The asteroid \href{https://en.wikipedia.org/wiki/99942_Apophis}{Apophis} was discovered in 2004.  
+I chose to model it for an AM 225 project because it achieved the highest ever rating 
+on the \href{https://en.wikipedia.org/wiki/Torino_scale}{Torino Scale}, which is used
+to communicate impact hazard of near-earth objects (NEOs) to the public.\footnote{
+The \href{https://en.wikipedia.org/wiki/Palermo_Technical_Impact_Hazard_Scale}{Palermo Scale}
+is a logarithmic risk scale that is better suited to scientific work.  
+It compares the modeled probability of an asteroid strike over the simulation period to the 
+estimated probability of a strike by an object of the same or greater energy from a background
+distribution of asteroid strikes.}
+Apophis was assigned a rating of 4 on the Torino scale in December 2004,
+when the estimated risk of a strike peaked at 2.7\% (approximately 1 in 37).
+Apophis was nominally named after the Egyptian god 
+\href{https://en.wikipedia.org/wiki/Apep}{Apep}, a.k.a Apophis, 
+the god of chaos and darkness and opponent of the sun god Ra.
+However it was ``really'' named after a character on the Sci-Fi TV show 
+\href{https://en.wikipedia.org/wiki/Stargate_SG-1}{Stargate SG-1}, 
+which includes in its fan base the astonomers who discovered it
+and thus got the privilege of naming it under IAU rules.
+
+The NASA Sentry system estimates that if Apophis were to strike 
+the earth, it would release approximately 750 megatons of energy.\footnote{
+A megaton is the energy released by one million tons of TNT.  
+Though hardly an SI unit, it has been the customary unit for communicating the destructive energy
+of nuclear weapons, which is why it has been adopted for communicating asteroid hazards.}
+To put this in context, the largest ever hydrogen bomb tested released 57 megatons,
+while the eruption of Krakatoa released 200 megatons.
+A strike by Apophis would unleash regional devastation in an area on the order of 
+perhaps thousands of square miles, but would not pose a major hazard to the entire planet.
+This also gets to the point of planetary defense and close monitoring of asteroids.
+Perhaps you may share a healthy skepticism that humanity could replicate the plot of 
+Armageddon and successfully deflect an object with a mass of $6.1\cdot 10^{10}$ kg.
+Given that the U.S. still doesn't have a working ballistic missile defense system,
+this skepticism would be well placed.  
+A 10 year plan to evacuate a radius of say 50 miles around a projected impact site,
+on the other hand, would be an eminently feasible undertaking.\footnote{
+Here is an interesting and not very fun thought experiment.
+If NASA calculations showed that Cambridge, MA would be the epicenter 
+an Apophis strike in 2029, would you sell your house and move?
+Would SEAS relocate not just to Allston but to, say, New York?
+I would probably want to run the simulation myself at least once before listing my house!}
+
+\subsection*{Simulating the Current Trajectory of Apophis}
+Using the techniques we learned in the Integrating the Solar System seminar, 
+simulate the trajectory of Apophis using the most current estimate of its state vectors available from JPL.
+Initialize a simulation with the Sun, Earth, Moon, and other planet barycenters 
+as of the epoch MJD 59516.
+You can either use the built-in Horizons API in Rebound (quickest when it works),
+or look up the orbital elements directly on the Web API and then key them in by hand.
+
+Simulate the trajectory of the massive bodies plus Apophis for a time span of 20 years.
+This will include near approaches it will make to Earth in 2029 and 2037.
+Use a granularity of at most 15 minutes.
+Calculate the time of nearest approach and compare your results to any published results you can find online.
+If you use some cleverness to interpolate the paths, you can significantly refine your forecast.
+However, it may be easier to just set a tighter resolution.\footnote{
+Remember, you don't need to save a whole array with all the high resolution position data, 
+you just need to find the time and distance of nearest approach.
+Given the speed and memory capacity of modern computers, I suggest using brute force.}
+Report your results as follows:
+\begin{itemize}
+\item Closest distance of approach in AU (thousands of km)
+\item Time of closest approach as an MJD (Date and Time in UTC)
+\item Plot of the distance from Earth to Apophis vs. time, with y-axis on a log scale
+\end{itemize}
+
+\subsection*{Simulating 1000 Sampled Trajectories of Apophis}
+One interesting technical aspect of this problem is the details of combining multiple 
+observations into a full uncertainty estimate for the distribution of possible paths.\footnote{
+The Sentry system provides estimates of the values and uncertainties of the
+orbital elements that can be accessed at the JPL Small-Body browser.
+Like the Horizons system, this is an excellent resource that is free to the public.
+CNEOS supplies not only current estimates and uncertainties for 
+the orbital elements, but a full 6x6 covariance matrix parameterized in the following six 
+orbital elements:
+\begin{itemize}
+\item $a$, the semi-major axis; named \tty{a} in JPL and REBOUND
+\item $e$, the eccentricity; named \tty{e} in both systems
+\item $i$, the inclination; named \tty{i} in JPL and \tty{inc} in REBOUND
+\item $\Omega$, the longitude of the ascending node; named \tty{node} in JPL and \tty{Omega} in REBOUND
+\item $\omega$, the argument of perihelion; named \tty{peri} in JPL and \tty{omega} in REBOUND
+\item $t_p$, the time of perihelion passage; named \tty{tp} in JPL and \tty{T} in REBOUND
+\end{itemize}
+Distances are in A.U. in both JPL and REBOUND.  
+Angles are quoted in degrees in JPL and in radians in REBOUND.
+The time $t_p$ is measured in Julian Days at JPL.
+}
+However, this is overkill for a short assignment.
+I only mention it here because it's interesting.
+
+For this exercise, assume that there is no uncertainty in the absolute position of Apophis,
+and that there is a relative uncertainty of $1.0 \times 10^{-6}$ in the velocity of Apophis.
+By this I mean that the uncertainty in its velocity vector is normally distributed in three dimensions
+with standard deviation $1.0 \times 10^{-6} \cdot \|v\|$, 
+where $\|v\|$ is the speed of the currently estimated velocity.
+
+Randomly simulate 1000 trajectories of Apophis by perturbing the velocity 
+according to the specifications above.
+\begin{itemize}
+\item What is the nearest approach to Earth out the 1000 trials?
+\item What is the standard deviation of the nearest approach distance?
+\end{itemize}
+
+\subsection*{Instructions:}
+Please make submit a short PDF report as the main work to be reviewed.\\
+Please also supply any Python / Jupyter Notebook files separately on Canvas.
+
+\end{document}
